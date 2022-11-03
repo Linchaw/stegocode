@@ -2,13 +2,7 @@
 import cv2
 import numpy as np
 import toolbox as tb
-F = 3
-
-
-def cv_show(img):
-    cv2.imshow('img', img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+F = 4
 
 
 def feature_block(gray):
@@ -46,43 +40,39 @@ def mes_block(gray, kp, threshold=1000):
         si = rf + ef + ef * rf
         if si > threshold:
             bkp.append(skp)
-    return tuple(bkp)
+    return bkp
 
 
-def modify_m(mes, b, g, res, f=F):
+def modify_m(mes, b, g, kpxy, f=F):
     mes_str = tb.bytes2binstr(mes)
     print("嵌入信息：", mes_str)
     idx = 0
-    bm = b.copy()
-    for kp in res:
-        xf, yf = kp.pt
-        x, y = int(xf), int(yf)
+    for x, y in kpxy:
         b_block = b[x - 4:x + 4, y - 4:y + 4]
         g_block = g[x - 4:x + 4, y - 4:y + 4]
-        b_dct = cv2.dct(np.float32(b_block))
-        g_dct = cv2.dct(np.float32(g_block))
-        cB, cG = (0, 0)
+        dct_b_block = cv2.dct(np.float32(b_block))
+        dct_g_block = cv2.dct(np.float32(g_block))
+        cB, cG, flag = (0, 0, False)
         for i in range(f):
-            cB += b_dct[f-1-i, i]
-            cG += g_dct[f-1-i, i]
-        dB = cB - cG
+            cB += dct_b_block[i, f-i]
+            cG += dct_g_block[i, f-i]
+        # print(cB, cG)
         sub_mes = mes_str[idx]
-        flag = 0
-        if sub_mes == '1' and dB <= 0:
-            flag = 1
-            cB = cB + 1.3 * abs(dB) + f
-            for i in range(f):
-                b_dct[f - 1 - i, i] = cB / f
 
-        elif sub_mes == '0' and dB > 0:
+        if sub_mes == '1' and cB <= cG:
             flag = 1
-            cB = cB - 1.3 * abs(dB) - f
             for i in range(f):
-                b_dct[f - 1 - i, i] = cB / f
+                dct_b_block[i, f - i] = dct_g_block[i, f - i] + 1
+
+        elif sub_mes == '0' and cB > cG:
+            flag = 1
+            for i in range(f):
+                dct_b_block[i, f - i] = dct_g_block[i, f - i] - 1
 
         if flag:
-            b_idct = cv2.idct(b_dct)
-            bm[x - 4:x + 4, y - 4:y + 4] = np.uint8(b_idct)
+            block = cv2.idct(dct_b_block)
+            block = np.uint8(block)
+            b[x - 4:x + 4, y - 4:y + 4] = block
 
         idx += 1
 
@@ -91,32 +81,30 @@ def modify_m(mes, b, g, res, f=F):
 
     if idx < len(mes_str) - 1:
         print("未嵌入所有数据")
+
     return b
 
 
-def get_info(res, b, g, length, f=F):
+def get_info(kpxy, b, g, length, f=F):
     info = ''
-    for kp in res:
-        xf, yf = kp.pt
-        x, y = int(xf), int(yf)
+    for x, y in kpxy:
         b_block = b[x - 4:x + 4, y - 4:y + 4]
         g_block = g[x - 4:x + 4, y - 4:y + 4]
-        b_dct = cv2.dct(np.float32(b_block))
-        g_dct = cv2.dct(np.float32(g_block))
+        dct_b_block = cv2.dct(np.float32(b_block))
+        dct_g_block = cv2.dct(np.float32(g_block))
         cB, cG = (0, 0)
         for i in range(f):
-            cB += b_dct[f - 1 - i, i]
-            cG += g_dct[f - 1 - i, i]
-        dB = cB - cG
+            cB += dct_b_block[i, f - i]
+            cG += dct_g_block[i, f - i]
 
-        if dB > 0:
+        if cB > cG:
             info += '1'
         else:
             info += '0'
 
         if len(info) >= length*8:
             break
-
+    print(cB, cG, '2')
     return info
 
 
@@ -125,31 +113,31 @@ def embed(img, mes):
     b, g, r = cv2.split(img)
     # 获取嵌入块
     kp = feature_block(gray)
-    res = mes_block(gray, kp, 300)
+    bkp = mes_block(gray, kp, 300)
 
-    rlist = list(res)
-    rlist.sort(key=lambda x: x.response, reverse=True)
-    res = tuple(rlist[0:len(mes) * 8])
+    bkp.sort(key=lambda x: x.response, reverse=True)
+    kpxy = [(int(x.pt[0]), int(x.pt[1])) for x in bkp[:len(mes)*8]]
 
     # 嵌入
-    bm = modify_m(mes, b, g, res, F)
-    ste_img = cv2.merge([bm, g, r])
-    return ste_img, res
+    b = modify_m(mes, b, g, kpxy, F)
+    ste_img = cv2.merge([b, g, r])
+    print(kpxy)
+    return ste_img
 
 
 def extract(ste_img, length):
-    ste_gray = cv2.cvtColor(ste_img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(ste_img, cv2.COLOR_BGR2GRAY)
     b, g, r = cv2.split(ste_img)
+    # 获取嵌入块
+    kp = feature_block(gray)
+    bkp = mes_block(gray, kp, 300)
 
-    kp = feature_block(ste_gray)
-    res = mes_block(ste_gray, kp, 300)
+    bkp.sort(key=lambda x: x.response, reverse=True)
+    kpxy = [(int(x.pt[0]), int(x.pt[1])) for x in bkp[:length * 8]]
 
-    rlist = list(res)
-    rlist.sort(key=lambda x: x.response, reverse=True)
-    res = tuple(rlist[0:length*8])
-
-    info = get_info(res, b, g, length, F)
-    return info, res
+    info = get_info(kpxy, b, g, length, F)
+    print(kpxy)
+    return info
 
 
 def crop(img, radio):
@@ -169,16 +157,17 @@ def main():
     L = 2
     if em_flag:
         img = cv2.imread('lena.png')
-        mes = tb.new_rand_bytes(L, 2)
-        ste_img, res1 = embed(img, mes)
-        # cv2.imwrite("ste.png", ste_img)
+        mes = tb.new_rand_bytes(L, 3)
+        ste_img = embed(img, mes)
+        cv2.imwrite("ste.png", ste_img)
 
     # 提取消息
     ex_flag = 1
     if ex_flag:
-        # ste_img = cv2.imread("ste.png")
-        # ste_img = cv2.resize(ste_img, (512, 512))
-        mes, res2 = extract(ste_img, L)
+        filename = 'ste.png'
+        ste_img = cv2.imread(filename)
+        ste_img = cv2.resize(ste_img, (512, 512))
+        mes = extract(ste_img, L)
         print("提取信息：", mes)
 
     pass

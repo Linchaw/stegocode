@@ -192,7 +192,7 @@ def imshow(image, name='image'):
     :return: None
     """
     cv2.imshow(name, image)
-    cv2.waitKey(0)
+    cv2.waitKey()
     cv2.destroyAllWindows()
 
 

@@ -41,6 +41,7 @@ for skp in kp:
         bkp.append(skp)
 
 bkp.sort(key=lambda x: x.response, reverse=True)
+
 kp = tuple(bkp[:Length*8])
 
 mes_str = tb.bytes2binstr(mes)
@@ -60,13 +61,13 @@ for skp in kp:
     for i in range(f):
         cB += dct_b_block[i, f-i]
         cG += dct_g_block[i, f-i]
-    if cB > cG:
-        if mes_str[idx] == '0':
-            dct_b_block[f, f-1] = dct_g_block[f, f-1] - 1
+    if cB > cG and mes_str[idx] == '0':
+            for i in range(f):
+                dct_b_block[f, f-1] = dct_g_block[f, f-1] - 1
             flag = 1
-    else:
-        if mes_str[idx] == '1':
-            dct_b_block[f, f-1] = dct_g_block[f, f-1] + 1
+    elif cB <= cG and mes_str[idx] == '1':
+        for i in range(f):
+            dct_b_block[f, f - 1] = dct_g_block[f, f - 1] + 1
             flag = 1
     if flag == 1:
         bm[x - 4:x + 4, y - 4:y + 4] = np.uint8(cv2.idct(dct_b_block))
