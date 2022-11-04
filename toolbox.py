@@ -153,7 +153,7 @@ def binstr2bytes(binstr):
     return data
 
 
-def jpeg_quantization_table(quality=75):
+def jpeg_quantization_table(quality=-1):
     """
     Generate JPEG quantization table.
     :param quality: quality of JPEG image
@@ -167,6 +167,10 @@ def jpeg_quantization_table(quality=75):
                       [24, 35, 55, 64, 81, 104, 113, 92],
                       [49, 64, 78, 87, 103, 121, 120, 101],
                       [72, 92, 95, 98, 112, 100, 103, 99]])
+
+    if quality < 0:
+        return table
+
     if quality <= 0:
         quality = 1
     if quality > 100:
@@ -217,7 +221,8 @@ def main():
     # print(data)
     # print(binstr)
     # print(Bytes)
-
+    table = jpeg_quantization_table()
+    print(table)
     pass
 
 

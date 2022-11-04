@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 import toolbox as tb
-F = 4
+F = 6
 
 
 def feature_block(gray):
@@ -71,9 +71,6 @@ def modify_m(mes, b, g, kpxy, f=F):
 
         idx += 1
 
-        if idx >= len(mes_str) - 1:
-            return b
-
     if idx < len(mes_str) - 1:
         print("未嵌入所有数据")
 
@@ -99,7 +96,7 @@ def get_info(kpxy, b, g, length, f=F):
 
         if len(info) >= length*8:
             break
-    print(cB, cG, '2')
+
     return info
 
 
@@ -116,7 +113,7 @@ def embed(img, mes):
     # 嵌入
     b = modify_m(mes, b, g, kpxy, F)
     ste_img = cv2.merge([b, g, r])
-    print(kpxy)
+    # print(kpxy)
     return ste_img
 
 
@@ -131,7 +128,7 @@ def extract(ste_img, length):
     kpxy = [(int(x.pt[0]), int(x.pt[1])) for x in bkp[:length * 8]]
 
     info = get_info(kpxy, b, g, length, F)
-    print(kpxy)
+    # print(kpxy)
     return info
 
 
@@ -152,7 +149,7 @@ def main():
     L = 2
     if em_flag:
         img = cv2.imread('lena.png')
-        mes = tb.new_rand_bytes(L, 3)
+        mes = tb.new_rand_bytes(L, 99)
         ste_img = embed(img, mes)
         cv2.imwrite("ste.png", ste_img)
 
