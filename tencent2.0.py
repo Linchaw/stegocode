@@ -6,11 +6,6 @@ F = 4
 
 
 def feature_block(gray):
-    # # sift
-    # sift = cv2.xfeatures2d.SIFT_create(300)
-    # kp = sift.detect(gray)
-
-    # orb
     orb = cv2.ORB_create()
     kp = orb.detect(gray, None)   # type - tuple
 
