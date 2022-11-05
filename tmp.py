@@ -21,7 +21,7 @@ import numpy as np
 F = 5
 
 
-def find_key_axis(gray: object, text=1000) -> object:
+def find_key_axis(gray: object, text=800) -> object:
     orb = cv2.ORB_create()
     kp = orb.detect(gray, None)
     kp_list = list(kp)
@@ -88,7 +88,11 @@ def embed():
 
 
 def extract():
-    img = cv2.imread('qq.png')
+    img = cv2.imread('ste.png')
+    # resize 1.5
+    f = 0.8
+    img = cv2.resize(img, (0, 0), fx=f, fy=f)
+    img = cv2.resize(img, (512, 512))
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     key_axis = find_key_axis(gray)
@@ -116,7 +120,7 @@ def extract():
             mes += "0"
 
     print(mes)
-    print(mes.count('1')/len(mes))
+    print(mes.count('1')/len(mes)*100, '%')
 
 
 embed()
