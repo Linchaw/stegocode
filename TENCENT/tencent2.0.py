@@ -148,7 +148,7 @@ def main():
     em_flag = 1
     L = 2
     if em_flag:
-        img = cv2.imread('lena.png')
+        img = cv2.imread('../lena.png')
         mes = tb.new_rand_bytes(L, 99)
         ste_img = embed(img, mes)
         cv2.imwrite("ste.png", ste_img)
@@ -156,7 +156,7 @@ def main():
     # 提取消息
     ex_flag = 1
     if ex_flag:
-        filename = '../ste.png'
+        filename = './ste.png'
         ste_img = cv2.imread(filename)
         ste_img = cv2.resize(ste_img, (512, 512))
         mes = extract(ste_img, L)

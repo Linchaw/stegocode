@@ -17,18 +17,21 @@ Specific methods:
 import cv2
 import toolbox as tb
 import numpy as np
+from pywt import dwt2, idwt2
 
 F = 6
-L = 5
-p = 0.5
+L = 2
+p = 1
 m = tb.new_rand_bytes(L)
 m = tb.bytes2binstr(m)
 print(m)
 
 
-def find_key_axis(gray: object, text=1200) -> object:
+def find_key_axis(gray, text=100):
+
     orb = cv2.ORB_create()
     kp = orb.detect(gray, None)
+
     kp_list = list(kp)
     for skp in kp:
         x, y = skp.pt
@@ -60,7 +63,7 @@ def find_key_axis(gray: object, text=1200) -> object:
 
 
 def embed():
-    img = cv2.imread('lena.png')
+    img = cv2.imread('../lena.png')
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     key_axis = find_key_axis(gray)

@@ -113,9 +113,9 @@ def bytes_sort(data, seed=0):
 def new_rand_bytes(length=32, seed=0):
     """
     Generate new bytes.
-    :param length: length of bytes
-    :param seed: seed for random number generator
-    :return: new bytes
+    : param length: length of bytes
+    : param seed: seed for random number generator
+    : return: new bytes
     """
     np.random.seed(seed)
     random_array = np.random.randint(0, 256, length)
@@ -189,6 +189,54 @@ def jpeg_quantization_table(quality=-1):
     return qtable
 
 
+def jpeg_dct(array, qtable=None):
+    """
+    JPEG DCT.
+    : param array: array to be transformed
+    : return: transformed array
+    """
+    if array.shape[0] % 8 != 0 or array.shape[1] % 8 != 0:
+        print('Invalid array shape')
+        return None
+
+    # initialize transformed array
+    dct_array = np.zeros_like(array, dtype=np.float32)
+
+    # DCT
+    for i in range(0, array.shape[0], 8):
+        for j in range(0, array.shape[1], 8):
+            block = np.float32(array[i:i+8, j:j+8])
+            dct_array[i:i+8, j:j+8] = cv2.dct(block)
+            if qtable is not None:
+                dct_array[i:i+8, j:j+8] = np.round(dct_array[i:i+8, j:j+8] / qtable)
+
+    return dct_array
+
+
+def jpeg_idct(array, qtable=None):
+    """
+    JPEG IDCT.
+    : param array: array to be transformed
+    : return: transformed array
+    """
+    if array.shape[0] % 8 != 0 or array.shape[1] % 8 != 0:
+        print('Invalid array shape')
+        return None
+
+    # initialize transformed array
+    idct_array = np.zeros_like(array, dtype=np.float32)
+
+    # IDCT
+    for i in range(0, array.shape[0], 8):
+        for j in range(0, array.shape[1], 8):
+            block = np.float32(array[i:i+8, j:j+8])
+            if qtable is not None:
+                block = block * qtable
+            idct_array[i:i+8, j:j+8] = np.uint8(cv2.idct(block))
+
+    return idct_array
+
+
 def error_rate(str1, str2):
     """
     Calculate error rate of two strings.
@@ -204,6 +252,7 @@ def error_rate(str1, str2):
         if str1[i] != str2[i]:
             error += 1
     return error / len(str1)
+
 
 def imshow(image, name='image'):
     """
