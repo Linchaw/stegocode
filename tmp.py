@@ -18,10 +18,15 @@ import cv2
 import toolbox as tb
 import numpy as np
 
-F = 5
+F = 6
+L = 2
+p = 0.5
+m = tb.new_rand_bytes(L)
+m = tb.bytes2binstr(m)
+print(m)
 
 
-def find_key_axis(gray: object, text=800) -> object:
+def find_key_axis(gray: object, text=1200) -> object:
     orb = cv2.ORB_create()
     kp = orb.detect(gray, None)
     kp_list = list(kp)
@@ -49,6 +54,8 @@ def find_key_axis(gray: object, text=800) -> object:
         if si > text:
             key_axis.append((row, column))
 
+    key_axis.sort(key=lambda x: x[1])
+    key_axis.sort(key=lambda x: x[0])
     return key_axis
 
 
@@ -57,13 +64,13 @@ def embed():
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     key_axis = find_key_axis(gray)
-    key_axis.sort(key=lambda x: x[1])
-    key_axis.sort(key=lambda x: x[0])
     # print(key_axis)
     b, g, r = cv2.split(img)
     table = tb.jpeg_quantization_table()
+    idx = 0
 
-    for row, column in key_axis:
+    print(key_axis[:L*8])
+    for row, column in key_axis[:L*8]:
         bb = b[row - 4:row + 4, column - 4:column + 4]
         bg = g[row - 4:row + 4, column - 4:column + 4]
         qdbb = cv2.dct(np.float32(bb)) / table
@@ -74,14 +81,23 @@ def embed():
             cB += qdbb[i, F-i]
             cG += qdbg[i, F-i]
 
-        if cB <= cG:
-            flag = True
+        if m[idx] == '1':
+            if cB - cG < 0.5:
+                flag = True
+                for i in range(F):
+                    qdbb[i, F-i] = qdbg[i, F-i] + p
+
+        else:
+            if cB - cG > -0.5:
+                flag = True
+                for i in range(F):
+                    qdbb[i, F-i] = qdbg[i, F-i] - p
 
         if flag:
-            for i in range(F):
-                qdbb[i, F-i] = qdbg[i, F-i] + 1
             bb = cv2.idct(qdbb * table)
             b[row - 4:row + 4, column - 4:column + 4] = np.uint8(bb)
+
+        idx += 1
 
     img = cv2.merge([b, g, r])
     cv2.imwrite('ste.png', img)
@@ -90,20 +106,20 @@ def embed():
 def extract():
     img = cv2.imread('ste.png')
     # resize 1.5
-    f = 0.8
-    img = cv2.resize(img, (0, 0), fx=f, fy=f)
-    img = cv2.resize(img, (512, 512))
+    # f = 1.5
+    # img = cv2.resize(img, (0, 0), fx=f, fy=f)
+    # img = cv2.resize(img, (512, 512))
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     key_axis = find_key_axis(gray)
-    key_axis.sort(key=lambda x: x[1])
-    key_axis.sort(key=lambda x: x[0])
+
     # print(key_axis)
     b, g, r = cv2.split(img)
     table = tb.jpeg_quantization_table()
 
     mes = ""
-    for row, column in key_axis:
+    print(key_axis[:L * 8])
+    for row, column in key_axis[:L*8]:
         bb = b[row - 4:row + 4, column - 4:column + 4]
         bg = g[row - 4:row + 4, column - 4:column + 4]
         dbb = cv2.dct(np.float32(bb))
@@ -120,8 +136,11 @@ def extract():
             mes += "0"
 
     print(mes)
-    print(mes.count('1')/len(mes)*100, '%')
 
 
 embed()
 extract()
+
+#  crop 20 % of the image --- 100% EXTRACTED
+#  resize 0.5 of the image --- 81.25% EXTRACTED
+#  resize 1.5 of the image --- 77.58% EXTRACTED
