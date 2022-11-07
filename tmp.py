@@ -19,7 +19,7 @@ import toolbox as tb
 import numpy as np
 
 F = 6
-L = 2
+L = 5
 p = 0.5
 m = tb.new_rand_bytes(L)
 m = tb.bytes2binstr(m)
@@ -73,8 +73,10 @@ def embed():
     for row, column in key_axis[:L*8]:
         bb = b[row - 4:row + 4, column - 4:column + 4]
         bg = g[row - 4:row + 4, column - 4:column + 4]
-        qdbb = cv2.dct(np.float32(bb)) / table
-        qdbg = cv2.dct(np.float32(bg)) / table
+        dbb = cv2.dct(np.float32(bb))
+        qdbb = np.round(dbb / table)
+        dbg = cv2.dct(np.float32(bg))
+        qdbg = np.round(dbg / table)
 
         cB, cG, flag = (0, 0, False)
         for i in range(F):
@@ -82,13 +84,13 @@ def embed():
             cG += qdbg[i, F-i]
 
         if m[idx] == '1':
-            if cB - cG < 0.5:
+            if cB - cG <= 0:
                 flag = True
                 for i in range(F):
                     qdbb[i, F-i] = qdbg[i, F-i] + p
 
         else:
-            if cB - cG > -0.5:
+            if cB - cG >= 0:
                 flag = True
                 for i in range(F):
                     qdbb[i, F-i] = qdbg[i, F-i] - p
@@ -136,6 +138,7 @@ def extract():
             mes += "0"
 
     print(mes)
+    print(tb.error_rate(m, mes)*100, "%")
 
 
 embed()

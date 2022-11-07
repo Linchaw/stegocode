@@ -8,6 +8,7 @@ function:
     new_rand_bytes(length=32, seed=0)  生成一个随机字节串
     bytes2binstr(data)  字节串转换为二进制字符串
     binstr2bytes(binstr)  二进制字符串转成字节串
+    error_rate(str1, str2)  计算两个字符串的误码率
     jpeg_quantization_table()  生成JPEG量化表
     imshow()  显示图像
 """
@@ -187,6 +188,22 @@ def jpeg_quantization_table(quality=-1):
 
     return qtable
 
+
+def error_rate(str1, str2):
+    """
+    Calculate error rate of two strings.
+    :param str1: string 1
+    :param str2: string 2
+    :return: error rate
+    """
+    if len(str1) != len(str2):
+        print('Error: two strings have different length!')
+        return None
+    error = 0
+    for i in range(len(str1)):
+        if str1[i] != str2[i]:
+            error += 1
+    return error / len(str1)
 
 def imshow(image, name='image'):
     """

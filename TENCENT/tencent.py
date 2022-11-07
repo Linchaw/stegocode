@@ -1,4 +1,3 @@
-
 """
 kp.pt 为关键点的坐标 为一个元组 为（column,row）
 img.shape 为图像的大小 为一个元组 为（row,column,channel）
@@ -13,25 +12,6 @@ Specific methods:
     7. 通过纹理特征判断是否为嵌入点
     8. 将嵌入点的坐标存入key_axis中
 2. 在嵌入点嵌入信息
-    1. 通过key_axis中的坐标，将嵌入点的区域截取出来
-    2. 对截取的区域进行DCT变换
-    3. 对DCT变换后的区域进行量化
-    4. 计算量化后的区域的纹理特征
-    5. 通过两个通道的纹理特征以及需要嵌入信息判断是否需要修改
-    6. 如果需要嵌入信息，则对量化后的区域进行修改
-    7. 对修改后的区域进行反量化
-    8. 对反量化后的区域进行反DCT变换
-    9. 将反DCT变换后的区域替换原区域
-3. 提取信息
-    1. 通过key_axis中的坐标，将嵌入点的区域截取出来
-    2. 对截取的区域进行DCT变换
-    3. 对DCT变换后的区域进行量化
-    4. 计算量化后的区域的纹理特征
-    5. 通过两个通道的纹理特征提取信息
-
-出现的问题：
-    少量 orb 特征点在嵌入之后出现了偏移
-    少量 orb 特征点在嵌入之后响应值出现变化，导致嵌入点的提取出现问题
 
 """
 import cv2
@@ -39,7 +19,7 @@ import toolbox as tb
 import numpy as np
 
 F = 6
-L = 2
+L = 3
 p = 0.5
 m = tb.new_rand_bytes(L)
 m = tb.bytes2binstr(m)
@@ -93,8 +73,10 @@ def embed():
     for row, column in key_axis[:L*8]:
         bb = b[row - 4:row + 4, column - 4:column + 4]
         bg = g[row - 4:row + 4, column - 4:column + 4]
-        qdbb = cv2.dct(np.float32(bb)) / table
-        qdbg = cv2.dct(np.float32(bg)) / table
+        dbb = cv2.dct(np.float32(bb))
+        qdbb = np.round(dbb / table)
+        dbg = cv2.dct(np.float32(bg))
+        qdbg = np.round(dbg / table)
 
         cB, cG, flag = (0, 0, False)
         for i in range(F):
@@ -102,13 +84,13 @@ def embed():
             cG += qdbg[i, F-i]
 
         if m[idx] == '1':
-            if cB - cG < 0.5:
+            if cB - cG <= 0:
                 flag = True
                 for i in range(F):
                     qdbb[i, F-i] = qdbg[i, F-i] + p
 
         else:
-            if cB - cG > -0.5:
+            if cB - cG >= 0:
                 flag = True
                 for i in range(F):
                     qdbb[i, F-i] = qdbg[i, F-i] - p
