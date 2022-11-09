@@ -254,6 +254,22 @@ def error_rate(str1, str2):
     return error / len(str1)
 
 
+def psnr(img1, img2):
+    """
+    Calculate PSNR of two images.
+    :param img1: image 1
+    :param img2: image 2
+    :return: PSNR
+    """
+    if img1.shape != img2.shape:
+        print('Error: two images have different shape!')
+        return None
+    mse = np.mean((img1 - img2) ** 2)
+    if mse == 0:
+        return 100
+    return 20 * np.log10(255.0 / np.sqrt(mse))
+
+
 def imshow(image, name='image'):
     """
     Show image.

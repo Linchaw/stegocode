@@ -10,7 +10,7 @@ DMAS -- Dither Modulation based on Adaptive Steganography
 
 
 def embed():
-    gray = cv2.imread('lena.png', 0)
+    gray = cv2.imread('../lena.png', 0)
     table = tb.jpeg_quantization_table()
     jpg_dct = tb.jpeg_dct(gray)
     # m = '0' * (gray.size // 64 * Fn)
@@ -33,13 +33,17 @@ def embed():
                     if m[idx] == '1':
                         if absf // Delta % 2 == 0 and absf % Delta < Delta / (2-p):
                             absf = absf // Delta * Delta + 2 * Delta/3
+                            absf = absf // Delta * Delta + Delta
                         elif absf // Delta % 2 == 1 and absf % Delta > Delta / (2+p):
                             absf = absf // Delta * Delta + Delta/3
+                            absf = absf // Delta * Delta
                     else:
                         if absf // Delta % 2 == 0 and absf % Delta > Delta / (2+p):
                             absf = absf // Delta * Delta + Delta/3
+                            absf = absf // Delta * Delta
                         elif absf // Delta % 2 == 1 and absf % Delta < Delta / (2-p):
                             absf = absf // Delta * Delta + 2 * Delta/3
+                            absf = absf // Delta * Delta + Delta
                     if f < 0:
                         block[i, F-1-i] = -absf
                     else:
@@ -75,7 +79,11 @@ def extract():
     print(tb.error_rate(m, m2) * 100, '%')
 
 
-Fn = 5
-q = 100
+Fn = 6
+q = 50
 embed()
 extract()
+
+img = cv2.imread('../lena_75.jpg', 0)
+img1 = cv2.imread('ste.jpg', 0)
+print(tb.psnr(img, img1))
