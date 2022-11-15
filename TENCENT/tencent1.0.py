@@ -60,7 +60,7 @@ def find_key_axis(gray: object, text=1200) -> object:
 
 
 def embed():
-    img = cv2.imread('lena.png')
+    img = cv2.imread('../lena.png')
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     key_axis = find_key_axis(gray)
@@ -97,6 +97,7 @@ def embed():
 
         if flag:
             bb = cv2.idct(qdbb * table)
+            bb = np.round(bb, 0)
             b[row - 4:row + 4, column - 4:column + 4] = np.uint8(bb)
 
         idx += 1

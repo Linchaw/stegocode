@@ -224,7 +224,7 @@ def jpeg_idct(array, qtable=None):
         return None
 
     # initialize transformed array
-    idct_array = np.zeros_like(array, dtype=np.float32)
+    idct_array = np.zeros_like(array, dtype=np.uint8)
 
     # IDCT
     for i in range(0, array.shape[0], 8):
@@ -232,7 +232,8 @@ def jpeg_idct(array, qtable=None):
             block = np.float32(array[i:i+8, j:j+8])
             if qtable is not None:
                 block = block * qtable
-            idct_array[i:i+8, j:j+8] = np.uint8(cv2.idct(block))
+            tmp = np.round(cv2.idct(block), 0)
+            idct_array[i:i + 8, j:j + 8] = np.uint8(tmp)
 
     return idct_array
 
